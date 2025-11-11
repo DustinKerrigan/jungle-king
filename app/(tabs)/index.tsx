@@ -1,9 +1,12 @@
 import { Text, View, StyleSheet } from "react-native";
+import React from "react";
+import { StatusBar } from "expo-status-bar";
 
 export default function HomeScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-green-200">
-      <Text className="text-xl font-bold text-green-800">Tailwind Works!</Text>
+    <View style={styles.container}>
+      
+      <Text style={styles.text}>Tailwind Works!</Text>
     </View>
   );
 }
