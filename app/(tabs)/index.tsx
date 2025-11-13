@@ -6,7 +6,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       
-      <Text style={styles.text}>Tailwind Works!</Text>
+      <Text style={styles.text}>Demo Homescreen</Text>
     </View>
   );
 }
