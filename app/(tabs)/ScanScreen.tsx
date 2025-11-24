@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react"; //this should work
+import React, { useEffect, useRef, useState } from "react"; 
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as tf from "@tensorflow/tfjs";
-import { loadAnimalModel, detectAnimals } from "./animalDetector";
+import { loadAnimalModel, runDetection } from "./animalDetector";
 
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -30,35 +30,43 @@ export default function ScanScreen() {
 
   const handleScan = async () => {
     if (!cameraRef.current || !modelReady) return;
-
     // take camera picture as base64
     const pic = await cameraRef.current.takePictureAsync({
       base64: true,
       skipProcessing: true,
     });
 
-    if (!pic.base64) return;
-
-    // turn base64 to tensor
-    const rawImageData = tf.util.encodeString(pic.base64, "base64").buffer;
-    const uint8array = new Uint8Array(rawImageData);
-    const imageTensor = tf.node.decodeImage(uint8array, 3) as tf.Tensor3D;
-
-    const predictions = await detectAnimals(imageTensor);
+    const { base64, width, height } = pic;
+    if (!base64 || !width || !height) return;
+    // Convert base64 → Image → Canvas → Pixel array
+    const image = new Image();
+    image.src = `data:image/jpg;base64,${base64}`;
+    await new Promise(resolve => (image.onload = resolve));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d"); 
+    if (!ctx){ //might be null at runtime, so we avoid error here
+      console.warn("Canvas context is not available");
+      return;
+    }
+    ctx.drawImage(image, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    //creating the tensor from the pixels
+    const imageTensor = tf.browser.fromPixels(imageData);
+    const predictions = await runDetection(imageTensor);
 
     if (predictions.length > 0) {
       setResult(predictions[0].class);
     } else {
       setResult("No animals detected");
     }
-
     imageTensor.dispose();
   };
 
   return (
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} />
-
       <View style={styles.overlay}>
         <TouchableOpacity
           disabled={!modelReady}
@@ -69,7 +77,6 @@ export default function ScanScreen() {
             {modelReady ? "Scan" : "Loading model..."}
           </Text>
         </TouchableOpacity>
-
         {result && <Text style={styles.result}>{result}</Text>}
       </View>
     </View>
