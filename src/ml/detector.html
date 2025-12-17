@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Animal Detector</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+</head>
+
+<body>
+<script>
+  let model = null;
+
+  async function loadModel() {
+    model = await cocoSsd.load();
+    console.log("Model loaded");
+  }
+
+  loadModel();
+
+  async function detect(base64) {
+    const img = new Image();
+    img.src = "data:image/jpeg;base64," + base64;
+
+    await new Promise(resolve => (img.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    const predictions = await model.detect(canvas);
+
+    if (predictions.length > 0) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "RESULT",
+          payload: predictions[0].class
+        })
+      );
+    } else {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "RESULT",
+          payload: "No animals detected"
+        })
+      );
+    }
+  }
+
+  document.addEventListener("message", (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "DETECT") {
+      detect(data.payload);
+    }
+  });
+</script>
+</body>
+</html>
