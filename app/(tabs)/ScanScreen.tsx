@@ -9,6 +9,7 @@ export default function ScanScreen() {
   const webViewRef = useRef<any>(null);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [detections, setDetections] = useState<any[]>([]);
 
   if (!permission?.granted) {
     return (
@@ -47,8 +48,8 @@ export default function ScanScreen() {
 
       <AnimalDetectorWebView
         ref={webViewRef}
-        onResult={(label: string) => {
-          setResult(label);
+        onResult={(results) => {
+          setDetections(results);
           setLoading(false);
         }}
       />
@@ -64,7 +65,11 @@ export default function ScanScreen() {
           </Text>
         </TouchableOpacity>
 
-        {result && <Text style={styles.result}>{result}</Text>}
+        {detections.map((d, i) => (
+          <Text key={i} style={styles.result}>
+            {d.class} ({Math.round(d.score * 100)}%)
+          </Text>
+        ))}
       </View>
     </View>
   );

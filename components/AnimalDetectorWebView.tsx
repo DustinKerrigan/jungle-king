@@ -2,8 +2,14 @@ import React, { forwardRef } from "react";
 import { WebView } from "react-native-webview";
 import { Asset } from "expo-asset";
 
+type Detection = {
+  class: string;
+  score: number;
+  bbox: number[];
+};
+
 type Props = {
-  onResult: (label: string) => void;
+  onResult: (detections: Detection[]) => void;
 };
 
 const AnimalDetectorWebView = forwardRef<any, Props>(({ onResult }, ref) => {
