@@ -58,7 +58,31 @@
     const predictions = model.detect(canvas);
 
     //drawing boxes
-    
+    predictions.forEach(pred => {
+      const [x, y, width, height] = pred.bbox;
+      ctx.strokeStyle = "#00FF00";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, width, height);
+      ctx.fillStyle = "#00FF00";
+      ctx.font = "18px Arial"; 
+      ctx.filltext(
+        `${pred.class} (${Math.round(pred.score * 100)}%)`,
+        x,
+        y > 20 ? y - 5 : y + 20
+    ); 
+  });
+
+  //sending formatted results to react native
+  window.ReactNativeWebView.postMessage(
+      JSON.stringify({
+        type: "RESULT",
+        payload: predictions.map(p => ({
+          class: p.class,
+          score: p.score,
+          bbox: p.bbox
+        }))
+      })
+    );
   }
 
   document.addEventListener("message", (event) => {
@@ -67,6 +91,7 @@
       detect(data.payload);
     }
   });
+
 </script>
 </body>
 </html>
